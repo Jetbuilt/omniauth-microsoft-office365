@@ -1,4 +1,5 @@
 require "omniauth/strategies/oauth2"
+require "jwt"
 
 module OmniAuth
   module Strategies
@@ -15,19 +16,19 @@ module OmniAuth
 
       option :authorize_options, %w[scope domain_hint]
 
-      uid { raw_info["id"] }
+      uid {
+        raw_info['sub']
+      }
 
       info do
         {
-          email:           raw_info["mail"] || raw_info["userPrincipalName"],
-          display_name:    raw_info["displayName"],
-          first_name:      raw_info["givenName"],
-          last_name:       raw_info["surname"],
-          job_title:       raw_info["jobTitle"],
-          business_phones: raw_info["businessPhones"],
-          mobile_phone:    raw_info["mobilePhone"],
-          office_phone:    raw_info["officePhone"],
-          image:           avatar_file,
+          name: raw_info['name'],
+          nickname: raw_info['unique_name'],
+          first_name: raw_info['given_name'],
+          last_name: raw_info['family_name'],
+          email: raw_info['email'] || raw_info['upn'],
+          oid: raw_info['oid'],
+          tid: raw_info['tid']
         }
       end
 
@@ -37,8 +38,15 @@ module OmniAuth
         }
       end
 
+      # changed default gem
+      # use JWT to parse the access token's info
+      # was the only method that seemed to work when
+      # requesting Exchange Active Sync endpoints
+      # similar to https://github.com/marknadig/omniauth-azure-oauth2
+      # (didn't use that gem because it doesn't use v2.0 endpoints)
       def raw_info
-        @raw_info ||= access_token.get("https://graph.microsoft.com/v1.0/me").parsed
+        # it's all here in JWT http://msdn.microsoft.com/en-us/library/azure/dn195587.aspx
+        @raw_info ||= ::JWT.decode(access_token.token, nil, false).first
       end
 
       def authorize_params
