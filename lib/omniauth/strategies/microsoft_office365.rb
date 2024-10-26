@@ -46,7 +46,7 @@ module OmniAuth
       # (didn't use that gem because it doesn't use v2.0 endpoints)
       def raw_info
         # it's all here in JWT http://msdn.microsoft.com/en-us/library/azure/dn195587.aspx
-        @raw_info ||= ::JWT.decode(access_token.token, nil, false).first
+        @raw_info ||= ::JWT.decode(access_token.params.id_token, nil, false).first
       end
 
       def authorize_params
